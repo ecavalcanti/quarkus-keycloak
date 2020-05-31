@@ -89,7 +89,7 @@
     const keycloak = Keycloak({
       url: 'http://localhost:8180/auth',
       realm: 'meetup',
-      clientId: 'meetup-frontend'
+      clientId: 'meetup-frontend',
     });
 
     keycloak.onAuthSuccess = async function () {
@@ -98,7 +98,9 @@
     };
 
 
-    keycloak.init().success(function (authenticated) {
+    keycloak.init({
+      pkceMethod: 'S256'
+    }).success(function (authenticated) {
       event('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
     }).error(function (error) {
       event('Init Error');
