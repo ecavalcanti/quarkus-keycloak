@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.2/css/bulma.min.css">
+  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+
+  <script src="http://localhost:8180/auth/js/keycloak.js"></script>
+
+  <title>Frontend</title>
+</head>
+
+<body>
+  <section class="section">
+    <div class="container">
+      <h1 class="title">
+        Keycloak Frontend Example
+      </h1>
+      <div class="buttons">
+        <button class="button is-primary" onclick="keycloak.login()">Login</button>
+        <button class="button is-info" onclick="output(keycloak.tokenParsed)">Show Access Token</button>
+        <button class="button is-warning" onclick="keycloak.logout()">Logout</button>
+      </div>
+      <p class="subtitle">
+        <strong id="username"></strong>
+      </p>
+      <nav class="panel">
+        <p class="panel-heading">
+          Events
+        </p>
+        <div class="panel-block" id="events"></div>
+      </nav>
+      <label class="label">API Request</label>
+      <div class="field is-grouped">
+        <div class="control is-expanded">
+          <input class="input" type="text" id="url" value="http://localhost:8080/hello/" placeholder="Type API URL">
+        </div>
+        <div class="control">
+          <a class="button is-info" onclick="request()">
+            Send
+          </a>
+        </div>
+      </div>
+      <div class="field">
+        <div class="control">
+          <label class="checkbox">
+            <input type="checkbox" id="include_access_token">
+            Include Access Token
+          </label>
+        </div>
+      </div>      
+      <nav class="panel">
+        <p class="panel-heading">
+          Result
+        </p>
+        <div class="panel-block">
+          <pre style="width: 100%;" id="output"></pre>
+        </div>
+      </nav>
+    </div>
+  </section>
+  <script>
+    function event(event) {
+      const e = document.getElementById('events').innerHTML;
+      document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
+    }
+
+    function output(data) {
+      if (typeof data === 'object') {
+        data = JSON.stringify(data, null, '  ');
+      }
+      document.getElementById('output').innerHTML = data;
+    }
+
+    async function request() {
+      const url = document.getElementById('url').value;
+      const includeAccessToken = document.getElementById('include_access_token').checked;
+      const result = await fetch(url,  {
+        headers: includeAccessToken ? {
+          'Authorization' : `Bearer ${keycloak.token}`
+        } : undefined
+      });
+      const resultText = await result.text();
+      
+      output(`Status: ${result.status} <br/>Content: ${resultText}`);
+    }
+
+    const keycloak = Keycloak({
+      url: 'http://localhost:8180/auth',
+      realm: 'meetup',
+      clientId: 'meetup-frontend'
+    });
+
+    keycloak.onAuthSuccess = async function () {
+      const user = await keycloak.loadUserInfo();
+      document.getElementById('username').innerHTML = `User: ${user.name}`;
+    };
+
+
+    keycloak.init().success(function (authenticated) {
+      event('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
+    }).error(function (error) {
+      event('Init Error');
+    });
+
+
+  </script>
+</body>
+
+</html>
